@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard Pelacak Lokasi GPS Real-time</title>
+  <meta name="description" content="Dashboard pemantauan koordinat GPS, reverse geocoding alamat, dan peta interaktif.">
+  
+  <!-- Google Fonts: Outfit & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet CSS for interactive map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- Top Navigation Header -->
+    <header class="top-nav">
+      <div class="brand-area">
+        <div class="brand-icon">📍</div>
+        <div class="brand-title">
+          <h1>TrackLokasi Command Center</h1>
+          <p>Real-time Geolocation, Reverse Geocode & Monitoring Dashboard</p>
+        </div>
+      </div>
+      
+      <div class="nav-actions">
+        <div class="live-badge" id="liveStatusBadge">
+          <span class="pulse-dot"></span>
+          <span id="sseStatusText">Live SSE Terhubung</span>
+        </div>
+        
+        <button class="btn-secondary" id="btnSoundToggle" title="Suara Notifikasi Aktif">
+          🔊 <span id="soundLabel">Suara On</span>
+        </button>
+
+        <button class="btn-primary" id="btnOpenCreateModal">
+          <span>➕</span> Buat Link Baru
+        </button>
+      </div>
+    </header>
+
+    <!-- Stats Overview Cards -->
+    <section class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon blue">🔗</div>
+        <div class="stat-info">
+          <div class="stat-val" id="statTotalLinks">0</div>
+          <div class="stat-label">Total Link Dibuat</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon purple">👁️</div>
+        <div class="stat-info">
+          <div class="stat-val" id="statTotalClicks">0</div>
+          <div class="stat-label">Total Link Dibuka</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">🎯</div>
+        <div class="stat-info">
+          <div class="stat-val" id="statTotalCaptures">0</div>
+          <div class="stat-label">Lokasi Tertangkap (GPS)</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon amber">📡</div>
+        <div class="stat-info">
+          <div class="stat-val" id="statBestAccuracy">-</div>
+          <div class="stat-label">Akurasi Terbaik</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Content: Map & Logs -->
+    <div class="dashboard-grid">
+      
+      <!-- Left Panel: Interactive Leaflet Map -->
+      <section class="panel-card">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span>🗺️</span> Peta Pemantauan Interaktif
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-secondary" id="btnFitMap" title="Tampilkan Semua Titik">
+              🔍 Pas Semua Titik
+            </button>
+          </div>
+        </div>
+        
+        <div id="map"></div>
+      </section>
+
+      <!-- Right Panel: Captured Geolocation Logs Feed -->
+      <section class="panel-card">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span>📋</span> Riwayat Deteksi Lokasi Terbaru
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-secondary btn-danger" id="btnClearLogs" title="Bersihkan Semua Log">
+              🗑️ Bersihkan Log
+            </button>
+          </div>
+        </div>
+
+        <div class="logs-container" id="logsContainer">
+          <!-- Dynamic Log Cards injected via JS -->
+          <div class="empty-state" id="emptyLogsState">
+            <div class="icon">🛰️</div>
+            <h4>Belum ada koordinat lokasi yang masuk</h4>
+            <p>Kirimkan link pelacak kepada target. Begitu tombol diklik dan izin disetujui, koordinat beserta alamat lengkap langsung muncul di sini secara real-time.</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Bottom Section: Active Tracking Links Management -->
+    <section class="panel-card" style="min-height: auto;">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span>⚡</span> Daftar Link Pelacak Aktif
+        </div>
+      </div>
+
+      <div class="links-section" id="linksContainer">
+        <!-- Dynamic Links injected via JS -->
+        <div class="empty-state" id="emptyLinksState">
+          <div class="icon">🔗</div>
+          <h4>Belum ada link pelacak</h4>
+          <p>Klik tombol <strong>"Buat Link Baru"</strong> di atas untuk membuat tautan tracking pertama Anda.</p>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Modal: Create New Link -->
+  <div class="modal-overlay" id="createLinkModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>✨ Buat Link Pelacak Baru</h3>
+        <button class="modal-close" id="btnCloseModal">&times;</button>
+      </div>
+
+      <form id="createLinkForm">
+        <div class="form-group">
+          <label for="linkPreset">Pilih Tema Halaman (Tampilan Target):</label>
+          <select id="linkPreset" class="form-select">
+            <option value="maps" selected>📍 Berbagi Lokasi & Navigasi Peta</option>
+            <option value="delivery">📦 Konfirmasi Lokasi Penerima Paket</option>
+            <option value="hangout">☕ Titik Kumpul & Lokasi Teman</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-top: 14px;">
+          <label for="linkTitle">Judul / Label Link:</label>
+          <input type="text" id="linkTitle" class="form-input" placeholder="Contoh: Titik Kumpul Cafe Sudirman" value="Titik Kumpul & Petunjuk Rute" required>
+        </div>
+
+        <div class="form-group" style="margin-top: 14px;">
+          <label for="linkDestination">Tujuan / Nama Tempat (Opsional):</label>
+          <input type="text" id="linkDestination" class="form-input" placeholder="Contoh: Grand Indonesia, Jakarta Pusat">
+        </div>
+
+        <div class="form-group" style="margin-top: 14px;">
+          <label for="linkNote">Catatan Pribadi (Hanya terlihat di admin):</label>
+          <input type="text" id="linkNote" class="form-input" placeholder="Contoh: Dikirim ke klien Budi">
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px;">
+          <button type="button" class="btn-secondary" id="btnCancelModal">Batal</button>
+          <button type="submit" class="btn-primary">Generate Link 🚀</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Audio Alert Beep (synthesized Web Audio API used in JS) -->
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  
+  <!-- Dashboard Main JS Logic -->
+  <script src="/js/dashboard.js"></script>
+</body>
+</html>

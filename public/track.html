@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title id="pageTitle">Google Maps - Titik Lokasi Pertemuan & Navigasi</title>
+  
+  <!-- Leaflet CSS for immediate map display once allowed -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <link rel="stylesheet" href="/css/track.css">
+</head>
+<body>
+
+  <div class="card-wrapper">
+    <!-- Header visual with map graphic & radar pulse -->
+    <div class="map-graphic-header" id="headerGraphic">
+      <div class="map-grid-bg"></div>
+      <div class="pin-radar-container">
+        <div class="radar-wave"></div>
+        <div class="pin-icon" id="headerIcon">📍</div>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <!-- Target Location Badge -->
+      <div class="badge-destination" id="badgeDestination">
+        <span>📍 Titik Temu Dibagikan</span>
+      </div>
+
+      <!-- Main Title -->
+      <h2 class="title-main" id="mainTitle">
+        Berbagi Lokasi Real-Time & Rute
+      </h2>
+
+      <!-- Description -->
+      <p class="description-text" id="descText">
+        Tautan ini digunakan untuk membagikan koordinat lokasi Anda ke dashboard pemantau. Dengan menekan tombol di bawah dan memilih 'Izinkan', koordinat GPS perangkat Anda akan dibagikan secara aman dan rute navigasi akan ditampilkan di peta.
+      </p>
+
+      <!-- Value Proposition / Features list -->
+      <div class="features-list" id="featuresList">
+        <div class="feature-item">
+          <span class="icon">📍</span>
+          <span>Koordinat dibagikan langsung ke dashboard pemantau</span>
+        </div>
+        <div class="feature-item">
+          <span class="icon">🗺️</span>
+          <span>Menampilkan alamat lengkap dan panduan navigasi peta</span>
+        </div>
+      </div>
+
+      <!-- Status or Error alert container -->
+      <div class="status-box" id="statusBox"></div>
+
+      <!-- Result interactive map after user allows location -->
+      <div id="resultMapContainer"></div>
+
+      <!-- CTA Button -->
+      <button class="btn-action" id="btnShareLocation">
+        <div class="spinner" id="btnSpinner"></div>
+        <span id="btnText">📍 Izinkan & Bagikan Lokasi Saya</span>
+      </button>
+
+      <!-- Post-Action Direct Google Maps Redirect Link -->
+      <a href="#" id="linkDirectGoogleMaps" target="_blank" rel="noopener noreferrer" style="display: none; font-size: 0.9rem; color: #1a73e8; text-decoration: none; font-weight: 600; padding: 6px;">
+        Buka Langsung di Aplikasi Google Maps ↗
+      </a>
+    </div>
+
+    <!-- Security & privacy footer note -->
+    <div class="card-footer">
+      <span>🔒 Verifikasi aman &bull; Layanan Geonavigasi Resmi</span>
+    </div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  
+  <script src="/js/track.js"></script>
+</body>
+</html>
