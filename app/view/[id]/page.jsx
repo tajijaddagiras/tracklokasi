@@ -368,7 +368,7 @@ export default function HeartfeltApologyPage({ params }) {
         }}>
           <div style={{ flex: 1, height: '1px', background: 'rgba(230, 215, 210, 0.7)' }}></div>
           <span style={{ fontSize: '0.78rem', color: '#a8a29e', letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 600 }}>
-            Putar Video di Bawah Ini
+            Video Kenangan Untukmu
           </span>
           <div style={{ flex: 1, height: '1px', background: 'rgba(230, 215, 210, 0.7)' }}></div>
         </div>
@@ -406,78 +406,16 @@ export default function HeartfeltApologyPage({ params }) {
               controls={isPlaying}
               loop
               preload="auto"
+              onClick={!isPlaying ? handleCalculateAndPlay : undefined}
               style={{
                 width: '100%',
                 height: '100%',
                 objectFit: 'contain',
                 backgroundColor: '#0c0a09',
-                display: 'block'
+                display: 'block',
+                cursor: !isPlaying ? 'pointer' : 'default'
               }}
             />
-
-            {/* Elegant Minimalist Play Overlay */}
-            {!isPlaying && (
-              <div
-                onClick={handleCalculateAndPlay}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%',
-                  background: 'linear-gradient(rgba(0,0,0,0.25), rgba(0,0,0,0.55))',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  userSelect: 'none',
-                  zIndex: 10,
-                  transition: 'background 0.3s ease'
-                }}
-              >
-                {/* Refined Small Play Button */}
-                <div style={{
-                  width: '56px',
-                  height: '56px',
-                  borderRadius: '50%',
-                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                  boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3), 0 0 0 4px rgba(255, 255, 255, 0.25)',
-                  backdropFilter: 'blur(8px)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '12px',
-                  transition: 'transform 0.2s ease',
-                  paddingLeft: '3px'
-                }}>
-                  {isLoading ? (
-                    <div style={{
-                      width: '20px',
-                      height: '20px',
-                      border: '2px solid rgba(156, 65, 70, 0.3)',
-                      borderRadius: '50%',
-                      borderTopColor: '#9c4146',
-                      animation: 'spin 0.8s linear infinite'
-                    }} />
-                  ) : (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#9c4146">
-                      <path d="M8 5v14l11-7z" />
-                    </svg>
-                  )}
-                </div>
-
-                <div style={{
-                  fontSize: '0.9rem',
-                  fontWeight: 600,
-                  color: '#ffffff',
-                  letterSpacing: '0.01em',
-                  textShadow: '0 2px 8px rgba(0,0,0,0.8)'
-                }}>
-                  {isLoading ? 'Menyiapkan Video...' : 'Sentuh untuk Memutar'}
-                </div>
-              </div>
-            )}
 
           </div>
 
