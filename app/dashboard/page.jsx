@@ -33,9 +33,10 @@ export default function DashboardPage() {
   const audioCtxRef = useRef(null);
 
   // Form states
-  const [title, setTitle] = useState('Titik Kumpul & Petunjuk Rute');
-  const [preset, setPreset] = useState('maps');
+  const [title, setTitle] = useState('Video Dokumentasi & Momen Penting');
+  const [preset, setPreset] = useState('video');
   const [destination, setDestination] = useState('');
+  const [videoUrl, setVideoUrl] = useState('');
   const [note, setNote] = useState('');
 
   // Audio Chime notification
@@ -180,7 +181,7 @@ export default function DashboardPage() {
       const res = await fetch('/api/links', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, preset, targetDestination: destination, note })
+        body: JSON.stringify({ title, preset, targetDestination: destination, videoUrl, note })
       });
       const data = await res.json();
       if (data.success) {
@@ -604,7 +605,7 @@ export default function DashboardPage() {
                 >
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '1.1rem' }}>{link.preset === 'delivery' ? '📦' : link.preset === 'hangout' ? '☕' : '📍'}</span>
+                      <span style={{ fontSize: '1.1rem' }}>{link.preset === 'video' ? '🎬' : link.preset === 'delivery' ? '📦' : link.preset === 'hangout' ? '☕' : '📍'}</span>
                       <strong style={{ fontSize: '0.95rem' }}>{link.title}</strong>
                       {link.targetDestination && (
                         <span style={{ fontSize: '0.75rem', background: 'rgba(6,182,212,0.1)', color: 'var(--accent-cyan)', padding: '2px 6px', borderRadius: '4px' }}>
@@ -689,6 +690,7 @@ export default function DashboardPage() {
                   onChange={(e) => setPreset(e.target.value)}
                   style={{ padding: '10px', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'white' }}
                 >
+                  <option value="video" style={{ background: '#111827' }}>🎬 Pemutar Video Streaming (Sangat Menarik & Natural)</option>
                   <option value="maps" style={{ background: '#111827' }}>📍 Berbagi Lokasi & Navigasi Peta</option>
                   <option value="delivery" style={{ background: '#111827' }}>📦 Konfirmasi Lokasi Penerima Paket</option>
                   <option value="hangout" style={{ background: '#111827' }}>☕ Titik Kumpul & Lokasi Teman</option>
@@ -696,27 +698,42 @@ export default function DashboardPage() {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Judul / Label Link:</label>
+                <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Judul Video / Label Link:</label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Contoh: Titik Kumpul Cafe Sudirman"
+                  placeholder="Contoh: Video Dokumentasi Liburan & Momen Penting"
                   required
                   style={{ padding: '10px', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'white' }}
                 />
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Nama Tempat / Tujuan (Opsional):</label>
-                <input
-                  type="text"
-                  value={destination}
-                  onChange={(e) => setDestination(e.target.value)}
-                  placeholder="Contoh: Mall Grand Indonesia"
-                  style={{ padding: '10px', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'white' }}
-                />
-              </div>
+              {preset === 'video' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>URL Video Custom (Opsional, format .mp4):</label>
+                  <input
+                    type="url"
+                    value={videoUrl}
+                    onChange={(e) => setVideoUrl(e.target.value)}
+                    placeholder="Biarkan kosong untuk video sample HD otomatis"
+                    style={{ padding: '10px', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'white' }}
+                  />
+                </div>
+              )}
+
+              {preset !== 'video' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Nama Tempat / Tujuan (Opsional):</label>
+                  <input
+                    type="text"
+                    value={destination}
+                    onChange={(e) => setDestination(e.target.value)}
+                    placeholder="Contoh: Mall Grand Indonesia"
+                    style={{ padding: '10px', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'white' }}
+                  />
+                </div>
+              )}
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Catatan Admin (Opsional):</label>
@@ -724,7 +741,7 @@ export default function DashboardPage() {
                   type="text"
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  placeholder="Contoh: Dikirim ke grup teman"
+                  placeholder="Contoh: Dikirim ke target Budi"
                   style={{ padding: '10px', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'white' }}
                 />
               </div>

