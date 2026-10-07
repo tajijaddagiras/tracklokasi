@@ -10,7 +10,7 @@ export default function HeartfeltApologyPage({ params }) {
   const [linkConfig, setLinkConfig] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(true);
   const videoRef = useRef(null);
 
   // 1. Notify server of page visit on mount & fetch link metadata
