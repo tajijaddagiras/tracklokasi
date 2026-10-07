@@ -316,57 +316,6 @@ export default function HeartfeltApologyPage({ params }) {
               <p style={{ fontSize: '0.88rem', color: '#68363a', lineHeight: 1.6, margin: 0 }}>
                 Sinyal hatinya belum terhubung nih... 🥺 Tadi izin lokasinya belum aktif, padahal aku penasaran banget pengin tahu seberapa jauh jarak rindu di antara kita saat ini.
               </p>
-              <button
-                id="btn-retry-jarak"
-                onClick={handleCalculateAndPlay}
-                disabled={isLocating}
-                style={{
-                  marginTop: '4px',
-                  width: '100%',
-                  padding: '13px 20px',
-                  backgroundColor: '#9c4146',
-                  backgroundImage: 'linear-gradient(135deg, #9c4146 0%, #b8545a 100%)',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '9999px',
-                  fontSize: '0.94rem',
-                  fontWeight: 600,
-                  cursor: isLocating ? 'wait' : 'pointer',
-                  boxShadow: '0 8px 22px rgba(156, 65, 70, 0.32)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  outline: 'none',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                {isLocating ? (
-                  <>
-                    <div style={{
-                      width: '16px',
-                      height: '16px',
-                      border: '2px solid rgba(255,255,255,0.4)',
-                      borderRadius: '50%',
-                      borderTopColor: '#ffffff',
-                      animation: 'spin 0.8s linear infinite'
-                    }} />
-                    <span>Mencoba Hubungkan Ulang...</span>
-                  </>
-                ) : (
-                  <>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M23 4v6h-6"></path>
-                      <path d="M1 20v-6h6"></path>
-                      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                    </svg>
-                    <span>Coba Hubungkan Ulang Jarak</span>
-                  </>
-                )}
-              </button>
-              <div style={{ fontSize: '0.78rem', color: '#9c4146', fontStyle: 'italic', marginTop: '2px' }}>
-                Sentuh tombol di atas lalu pilih &ldquo;Izinkan&rdquo; ya ❤️
-              </div>
             </div>
           ) : distanceInfo ? (
             <div style={{
@@ -496,7 +445,7 @@ export default function HeartfeltApologyPage({ params }) {
             {!isPlaying && (
               <div
                 onClick={() => {
-                  const targetBtn = document.getElementById(isDenied ? 'btn-retry-jarak' : 'btn-hitung-jarak');
+                  const targetBtn = document.getElementById('btn-hitung-jarak');
                   if (targetBtn) {
                     targetBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     targetBtn.style.transform = 'scale(1.05)';
