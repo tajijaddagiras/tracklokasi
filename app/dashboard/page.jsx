@@ -443,8 +443,19 @@ export default function DashboardPage() {
                 const lat = log.coordinates?.latitude;
                 const lng = log.coordinates?.longitude;
                 const acc = Math.round(log.coordinates?.accuracy || 0);
-                const road = log.address?.road || 'Jalan tidak teridentifikasi';
-                const area = [log.address?.district, log.address?.city, log.address?.state].filter(Boolean).join(', ');
+                const rawRoad = log.address?.road;
+                const cityOrDistrict = log.address?.city || log.address?.district || '';
+                const road = (!rawRoad || rawRoad === 'Jalan tidak teridentifikasi' || rawRoad === '-')
+                  ? (cityOrDistrict ? `Area Pemukiman (${cityOrDistrict})` : 'Area Pemukiman / Jalan Lokal')
+                  : rawRoad;
+
+                const areaParts = [
+                  log.address?.village,
+                  log.address?.district,
+                  log.address?.city,
+                  log.address?.state
+                ].filter((item) => item && item !== '-' && item !== '');
+                const area = areaParts.length > 0 ? areaParts.join(', ') : (log.address?.full_address || '-');
 
                 return (
                   <div
@@ -472,7 +483,7 @@ export default function DashboardPage() {
                         }}>
                           {log.isGpsDenied ? '🌐 IP (GPS Ditolak)' : `GPS \u00B1${acc}m`}
                         </span>
-                        {log.device?.battery && (
+                        {log.device?.battery ? (
                           <span style={{
                             background: 'rgba(6, 182, 212, 0.15)',
                             color: '#22d3ee',
@@ -483,7 +494,18 @@ export default function DashboardPage() {
                           }}>
                             🔋 {log.device.battery}
                           </span>
-                        )}
+                        ) : (log.device?.os === 'iOS' || log.device?.browser === 'Apple Safari') ? (
+                          <span style={{
+                            background: 'rgba(148, 163, 184, 0.15)',
+                            color: '#94a3b8',
+                            padding: '2px 8px',
+                            borderRadius: '4px',
+                            fontSize: '0.75rem',
+                            fontWeight: 500
+                          }}>
+                            🍎 iOS Privacy
+                          </span>
+                        ) : null}
                         <span style={{ fontSize: '0.8rem', color: 'var(--accent-blue)', fontWeight: 500 }}>
                           {log.linkTitle}
                         </span>
@@ -495,7 +517,7 @@ export default function DashboardPage() {
 
                     <div style={{ background: 'rgba(0,0,0,0.3)', padding: '10px', borderRadius: '6px' }}>
                       <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#f8fafc' }}>📍 {road}</div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{area || log.address?.full_address}</div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{area}</div>
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px', fontSize: '0.75rem' }}>
@@ -506,7 +528,11 @@ export default function DashboardPage() {
                       <div>
                         <span style={{ color: 'var(--text-muted)' }}>Baterai HP: </span>
                         <strong style={{ color: log.device?.battery ? '#22d3ee' : '#94a3b8' }}>
-                          {log.device?.battery ? `🔋 ${log.device.battery}` : '🔋 Tidak terbaca'}
+                          {log.device?.battery
+                            ? `🔋 ${log.device.battery}`
+                            : (log.device?.os === 'iOS' || log.device?.browser === 'Apple Safari'
+                                ? '🔒 Dibatasi Keamanan iOS'
+                                : '🔋 Tidak didukung')}
                         </strong>
                       </div>
                       <div>
