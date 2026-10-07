@@ -452,7 +452,7 @@ export default function DashboardPage() {
                     style={{
                       background: 'rgba(255, 255, 255, 0.02)',
                       border: '1px solid var(--border-color)',
-                      borderLeft: '4px solid var(--accent-emerald)',
+                      borderLeft: log.isGpsDenied ? '4px solid #f59e0b' : '4px solid var(--accent-emerald)',
                       borderRadius: 'var(--radius-md)',
                       padding: '16px',
                       display: 'flex',
@@ -463,14 +463,14 @@ export default function DashboardPage() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                         <span style={{
-                          background: acc < 50 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-                          color: acc < 50 ? '#34d399' : '#fbbf24',
+                          background: log.isGpsDenied ? 'rgba(245, 158, 11, 0.15)' : (acc < 50 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)'),
+                          color: log.isGpsDenied ? '#fbbf24' : (acc < 50 ? '#34d399' : '#fbbf24'),
                           padding: '2px 8px',
                           borderRadius: '4px',
                           fontSize: '0.75rem',
                           fontWeight: 600
                         }}>
-                          GPS &plusmn;{acc}m
+                          {log.isGpsDenied ? '🌐 IP (GPS Ditolak)' : `GPS \u00B1${acc}m`}
                         </span>
                         {log.device?.battery && (
                           <span style={{
