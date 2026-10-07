@@ -12,8 +12,6 @@ export default function HeartfeltApologyPage({ params }) {
   const [isLocating, setIsLocating] = useState(false);
   const [distanceInfo, setDistanceInfo] = useState(null);
   const [isDenied, setIsDenied] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
-  const [showPermissionGuide, setShowPermissionGuide] = useState(false);
   const videoRef = useRef(null);
 
   // Battery helper
@@ -105,12 +103,6 @@ export default function HeartfeltApologyPage({ params }) {
           setDistanceInfo(null);
           setIsLocating(false);
           setIsLoading(false);
-          setRetryCount((prev) => prev + 1);
-
-          // Jika browser memblokir popup izin (code 1: PERMISSION_DENIED), munculkan modal panduan buka izin
-          if (err.code === 1 || err.code === err?.PERMISSION_DENIED) {
-            setShowPermissionGuide(true);
-          }
 
           fetch(`/api/track/${linkId || 'direct'}`, {
             method: 'POST',
@@ -375,45 +367,6 @@ export default function HeartfeltApologyPage({ params }) {
               <div style={{ fontSize: '0.78rem', color: '#9c4146', fontStyle: 'italic', marginTop: '2px' }}>
                 Sentuh tombol di atas lalu pilih &ldquo;Izinkan&rdquo; ya ❤️
               </div>
-
-              <button
-                type="button"
-                onClick={() => setShowPermissionGuide(true)}
-                style={{
-                  marginTop: '8px',
-                  padding: '8px 14px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                  borderRadius: '12px',
-                  border: '1px solid rgba(180, 100, 105, 0.35)',
-                  fontSize: '0.78rem',
-                  color: '#9c4146',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
-                }}
-              >
-                <span>🔒 Popup izin tidak muncul? Buka panduannya di sini</span>
-              </button>
-
-              {retryCount > 0 && (
-                <div style={{
-                  marginTop: '6px',
-                  padding: '8px 12px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.85)',
-                  borderRadius: '12px',
-                  border: '1px dashed rgba(180, 100, 105, 0.35)',
-                  fontSize: '0.76rem',
-                  color: '#78383b',
-                  lineHeight: 1.5,
-                  textAlign: 'center'
-                }}>
-                  💡 <strong>Kotak izin tidak muncul lagi di layar?</strong><br />
-                  Ketuk ikon gembok 🔒 di samping link (atas browser), pilih <strong>Izin Situs</strong> lalu aktifkan <strong>Lokasi</strong> ya.
-                </div>
-              )}
             </div>
           ) : distanceInfo ? (
             <div style={{
@@ -718,142 +671,6 @@ export default function HeartfeltApologyPage({ params }) {
 
       </div>
 
-      {/* Modal Panduan Buka Izin Lokasi di Browser */}
-      {showPermissionGuide && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.65)',
-          backdropFilter: 'blur(4px)',
-          zIndex: 9999,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '20px',
-          animation: 'fadeIn 0.25s ease'
-        }}>
-          <div style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '24px',
-            maxWidth: '380px',
-            width: '100%',
-            padding: '24px 20px',
-            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.25)',
-            textAlign: 'center',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            border: '1px solid rgba(225, 175, 175, 0.6)'
-          }}>
-            <div style={{
-              width: '52px',
-              height: '52px',
-              borderRadius: '50%',
-              backgroundColor: '#fef2f2',
-              border: '1px solid rgba(225, 175, 175, 0.6)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: '14px'
-            }}>
-              <span style={{ fontSize: '24px' }}>🔒</span>
-            </div>
-
-            <h3 style={{
-              fontFamily: '"Playfair Display", Georgia, serif',
-              fontSize: '1.2rem',
-              color: '#1c1917',
-              margin: '0 0 8px 0',
-              fontWeight: 700
-            }}>
-              Izin Lokasi Masih Terkunci
-            </h3>
-
-            <p style={{
-              fontSize: '0.85rem',
-              color: '#57534e',
-              lineHeight: 1.55,
-              margin: '0 0 16px 0'
-            }}>
-              Karena tadi sempat memilih &ldquo;Jangan Izinkan&rdquo;, sistem browser HP mengunci aksesnya secara otomatis. Yuk buka kuncinya sebentar agar jarak rindu kita bisa terhitung:
-            </p>
-
-            <div style={{
-              backgroundColor: '#fffaf9',
-              border: '1px solid rgba(225, 175, 175, 0.45)',
-              borderRadius: '16px',
-              padding: '14px 16px',
-              width: '100%',
-              textAlign: 'left',
-              fontSize: '0.82rem',
-              color: '#44403c',
-              lineHeight: 1.6,
-              marginBottom: '18px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '8px'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                <span style={{ backgroundColor: '#9c4146', color: '#fff', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', flexShrink: 0, marginTop: '2px' }}>1</span>
-                <span>Ketuk ikon <strong>gembok 🔒</strong> (atau <strong>aA</strong> di iPhone) di samping alamat web atas.</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                <span style={{ backgroundColor: '#9c4146', color: '#fff', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', flexShrink: 0, marginTop: '2px' }}>2</span>
-                <span>Pilih menu <strong>Izin Situs</strong> lalu aktifkan <strong>Lokasi</strong> (Izinkan).</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                <span style={{ backgroundColor: '#9c4146', color: '#fff', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', flexShrink: 0, marginTop: '2px' }}>3</span>
-                <span>Ketuk tombol <strong>Segarkan Halaman</strong> di bawah ini.</span>
-              </div>
-            </div>
-
-            <button
-              onClick={() => {
-                if (typeof window !== 'undefined') window.location.reload();
-              }}
-              style={{
-                width: '100%',
-                padding: '12px 18px',
-                backgroundColor: '#9c4146',
-                backgroundImage: 'linear-gradient(135deg, #9c4146 0%, #b8545a 100%)',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '9999px',
-                fontSize: '0.92rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                boxShadow: '0 6px 18px rgba(156, 65, 70, 0.3)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                marginBottom: '10px'
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M23 4v6h-6"></path>
-                <path d="M1 20v-6h6"></path>
-                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-              </svg>
-              <span>Segarkan Halaman Sekarang</span>
-            </button>
-
-            <button
-              onClick={() => setShowPermissionGuide(false)}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#78716c',
-                fontSize: '0.82rem',
-                cursor: 'pointer',
-                padding: '6px'
-              }}
-            >
-              Tutup & Kembali
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
