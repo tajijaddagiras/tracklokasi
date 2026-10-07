@@ -713,10 +713,10 @@ export default function DashboardPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>URL Video Custom (Opsional, format .mp4):</label>
                   <input
-                    type="url"
+                    type="text"
                     value={videoUrl}
                     onChange={(e) => setVideoUrl(e.target.value)}
-                    placeholder="Biarkan kosong untuk video sample HD otomatis"
+                    placeholder="Contoh: /videos/video-saya.mp4 atau link https://..."
                     style={{ padding: '10px', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'white' }}
                   />
                 </div>
