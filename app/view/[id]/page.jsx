@@ -232,35 +232,6 @@ export default function HeartfeltApologyPage({ params }) {
           </div>
         </div>
 
-        {/* Special Message Action Button */}
-        {!isPlaying && (
-          <button
-            onClick={handleRequestPlay}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '11px 24px',
-              backgroundColor: '#ffffff',
-              border: '1px solid rgba(225, 175, 175, 0.75)',
-              borderRadius: '9999px',
-              fontSize: '0.88rem',
-              color: '#9c4146',
-              fontWeight: 600,
-              cursor: 'pointer',
-              boxShadow: '0 4px 15px rgba(156, 65, 70, 0.1)',
-              marginBottom: '20px',
-              transition: 'all 0.2s ease',
-              outline: 'none'
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="#9c4146">
-              <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
-            </svg>
-            <span>Buka Pesan & Video Spesial</span>
-          </button>
-        )}
-
         {/* Subtle Section Divider */}
         <div style={{
           display: 'flex',
@@ -495,7 +466,6 @@ export default function HeartfeltApologyPage({ params }) {
       {/* Heartfelt Apology Pre-Permission Modal */}
       <ApologyModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
         onConfirm={handleConfirmPlay}
       />
 

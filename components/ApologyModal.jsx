@@ -2,7 +2,7 @@
 
 import React from 'react';
 
-export default function ApologyModal({ isOpen, onClose, onConfirm }) {
+export default function ApologyModal({ isOpen, onConfirm }) {
   if (!isOpen) return null;
 
   return (
@@ -13,9 +13,9 @@ export default function ApologyModal({ isOpen, onClose, onConfirm }) {
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(28, 25, 23, 0.55)',
-        backdropFilter: 'blur(10px)',
-        WebkitBackdropFilter: 'blur(10px)',
+        backgroundColor: 'rgba(28, 25, 23, 0.65)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
         zIndex: 9999,
         display: 'flex',
         alignItems: 'center',
@@ -23,21 +23,15 @@ export default function ApologyModal({ isOpen, onClose, onConfirm }) {
         padding: '20px',
         animation: 'fadeIn 0.3s ease-out'
       }}
-      onClick={(e) => {
-        // Close if click outside modal card
-        if (e.target === e.currentTarget && onClose) {
-          onClose();
-        }
-      }}
     >
       <div
         style={{
           width: '100%',
-          maxWidth: '420px',
+          maxWidth: '400px',
           backgroundColor: '#ffffff',
           borderRadius: '26px',
-          padding: '32px 26px 28px 26px',
-          boxShadow: '0 25px 60px -12px rgba(156, 65, 70, 0.3), 0 0 0 1px rgba(230, 215, 210, 0.8)',
+          padding: '34px 26px 30px 26px',
+          boxShadow: '0 25px 60px -12px rgba(156, 65, 70, 0.35), 0 0 0 1px rgba(230, 215, 210, 0.8)',
           textAlign: 'center',
           position: 'relative',
           animation: 'slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
@@ -53,7 +47,7 @@ export default function ApologyModal({ isOpen, onClose, onConfirm }) {
             height: '54px',
             borderRadius: '50%',
             backgroundColor: '#fdf2f2',
-            border: '1px solid rgba(225, 175, 175, 0.4)',
+            border: '1px solid rgba(225, 175, 175, 0.45)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -88,14 +82,14 @@ export default function ApologyModal({ isOpen, onClose, onConfirm }) {
             fontSize: '0.94rem',
             lineHeight: 1.65,
             color: '#57534e',
-            margin: '0 0 24px 0',
+            margin: '0 0 26px 0',
             padding: '0 4px'
           }}
         >
-          Ada hal yang ingin kusampaikan dari lubuk hatiku yang terdalam sebelum kamu menonton video kenangan ini...
+          Ada hal yang ingin kusampaikan dari lubuk hatiku yang terdalam sebelum kamu membuka halaman ini...
         </p>
 
-        {/* Main CTA: Lanjutkan Menonton */}
+        {/* Single Main CTA Button: Lanjutkan */}
         <button
           onClick={onConfirm}
           style={{
@@ -106,11 +100,11 @@ export default function ApologyModal({ isOpen, onClose, onConfirm }) {
             color: '#ffffff',
             border: 'none',
             borderRadius: '9999px',
-            fontSize: '0.96rem',
+            fontSize: '1rem',
             fontWeight: 600,
             letterSpacing: '0.01em',
             cursor: 'pointer',
-            boxShadow: '0 8px 22px rgba(156, 65, 70, 0.35)',
+            boxShadow: '0 8px 24px rgba(156, 65, 70, 0.35)',
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -120,37 +114,18 @@ export default function ApologyModal({ isOpen, onClose, onConfirm }) {
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = '0 12px 26px rgba(156, 65, 70, 0.45)';
+            e.currentTarget.style.boxShadow = '0 12px 28px rgba(156, 65, 70, 0.45)';
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 8px 22px rgba(156, 65, 70, 0.35)';
+            e.currentTarget.style.boxShadow = '0 8px 24px rgba(156, 65, 70, 0.35)';
           }}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M8 5v14l11-7z" />
+          <span>Lanjutkan</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
           </svg>
-          <span>Lanjutkan Menonton</span>
         </button>
-
-        {/* Secondary soft link (Buka Pesan Spesial / Nanti) */}
-        {onClose && (
-          <button
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#a8a29e',
-              fontSize: '0.82rem',
-              marginTop: '14px',
-              cursor: 'pointer',
-              padding: '6px 12px',
-              fontFamily: '"Plus Jakarta Sans", sans-serif'
-            }}
-          >
-            Baca surat dulu
-          </button>
-        )}
       </div>
 
       <style jsx global>{`
