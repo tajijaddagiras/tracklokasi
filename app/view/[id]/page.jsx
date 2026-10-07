@@ -172,6 +172,73 @@ export default function HeartfeltApologyPage({ params }) {
           &ldquo;Ada hal yang tak sempat terucap secara langsung, namun tertulis tulus dari lubuk hati yang terdalam...&rdquo;
         </p>
 
+        {/* Photo Memory Frame (Polaroid / Aesthetic Gallery Style) */}
+        <div style={{
+          width: '100%',
+          maxWidth: '440px',
+          backgroundColor: '#ffffff',
+          padding: '12px 12px 16px 12px',
+          borderRadius: '22px',
+          boxShadow: '0 15px 35px -8px rgba(180, 140, 130, 0.16), 0 2px 8px rgba(0, 0, 0, 0.04)',
+          border: '1px solid rgba(230, 215, 210, 0.75)',
+          marginBottom: '24px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center'
+        }}>
+          <div style={{
+            width: '100%',
+            maxHeight: '380px',
+            borderRadius: '16px',
+            overflow: 'hidden',
+            backgroundColor: '#f5f0eb'
+          }}>
+            <img
+              src="/images/fotokita.jpeg"
+              alt="Momen Kenangan Kita"
+              style={{
+                width: '100%',
+                height: 'auto',
+                maxHeight: '380px',
+                objectFit: 'cover',
+                display: 'block'
+              }}
+            />
+          </div>
+
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            marginTop: '12px',
+            fontFamily: '"Playfair Display", Georgia, serif',
+            fontStyle: 'italic',
+            fontSize: '0.88rem',
+            color: '#78716c'
+          }}>
+            <span>Momen yang Selalu Ku Jaga</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="#9c4146">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+          </div>
+        </div>
+
+        {/* Subtle Section Divider */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          width: '100%',
+          maxWidth: '440px',
+          marginBottom: '16px'
+        }}>
+          <div style={{ flex: 1, height: '1px', background: 'rgba(230, 215, 210, 0.7)' }}></div>
+          <span style={{ fontSize: '0.78rem', color: '#a8a29e', letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 600 }}>
+            Putar Video di Bawah Ini
+          </span>
+          <div style={{ flex: 1, height: '1px', background: 'rgba(230, 215, 210, 0.7)' }}></div>
+        </div>
+
         {/* Video Card Container - Refined Luxury Frame */}
         <div style={{
           width: '100%',
