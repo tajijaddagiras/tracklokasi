@@ -128,57 +128,7 @@ export default function TargetVideoViewPage({ params }) {
       padding: '0 0 40px 0'
     }}>
       
-      {/* Top Navbar */}
-      <nav style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '14px 20px',
-        backgroundColor: '#111726',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-        position: 'sticky',
-        top: 0,
-        zIndex: 100
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            borderRadius: '8px',
-            background: 'linear-gradient(135deg, #ef4444, #dc2626)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontWeight: 800,
-            fontSize: '16px',
-            boxShadow: '0 0 15px rgba(239, 68, 68, 0.5)'
-          }}>
-            ▶
-          </div>
-          <span style={{ fontWeight: 700, fontSize: '1.05rem', letterSpacing: '-0.02em', color: '#fff' }}>
-            MediaStream <span style={{ color: '#ef4444', fontSize: '0.85rem' }}>HD</span>
-          </span>
-        </div>
-
-        <div style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '6px',
-          padding: '4px 10px',
-          background: 'rgba(239, 68, 68, 0.15)',
-          border: '1px solid rgba(239, 68, 68, 0.3)',
-          borderRadius: '9999px',
-          fontSize: '0.75rem',
-          color: '#f87171',
-          fontWeight: 600
-        }}>
-          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444' }}></span>
-          Video Pribadi
-        </div>
-      </nav>
-
-      <div style={{ maxWidth: '840px', margin: '20px auto 0', padding: '0 16px' }}>
+      <div style={{ maxWidth: '840px', margin: '24px auto 0', padding: '0 16px' }}>
 
         {/* Video Player Container */}
         <div style={{
