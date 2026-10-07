@@ -124,6 +124,14 @@ export default function HeartfeltApologyPage({ params }) {
     });
   };
 
+  // 3. Retry / Reload trigger (Sama persis seperti tombol di popup sebelumnya: me-reload halaman agar browser iPhone/Android mereset siklus izin)
+  const handleReload = () => {
+    setIsLocating(true);
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+    }
+  };
+
   const videoSource = linkConfig?.videoUrl || '/videos/momenvideo.mp4';
   const videoTitle = linkConfig?.title || 'Sebuah Permintaan Maaf dari Lubuk Hatiku';
 
@@ -318,7 +326,7 @@ export default function HeartfeltApologyPage({ params }) {
               </p>
               <button
                 id="btn-retry-jarak"
-                onClick={handleCalculateAndPlay}
+                onClick={handleReload}
                 disabled={isLocating}
                 style={{
                   marginTop: '4px',
@@ -351,7 +359,7 @@ export default function HeartfeltApologyPage({ params }) {
                       borderTopColor: '#ffffff',
                       animation: 'spin 0.8s linear infinite'
                     }} />
-                    <span>Mencoba Hubungkan Ulang...</span>
+                    <span>Memuat Ulang...</span>
                   </>
                 ) : (
                   <>
