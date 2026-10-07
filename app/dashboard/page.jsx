@@ -89,7 +89,31 @@ export default function DashboardPage() {
     });
   };
 
-  // Fetch Links & Logs
+  // 1. Initial load from LocalStorage to prevent data loss on cold starts
+  useEffect(() => {
+    try {
+      const savedLogs = localStorage.getItem('tracklokasi_saved_logs');
+      if (savedLogs) {
+        const parsed = JSON.parse(savedLogs);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setLogs(parsed);
+          previousLogCountRef.current = parsed.length;
+        }
+      }
+
+      const savedLinks = localStorage.getItem('tracklokasi_saved_links');
+      if (savedLinks) {
+        const parsedLinks = JSON.parse(savedLinks);
+        if (Array.isArray(parsedLinks) && parsedLinks.length > 0) {
+          setLinks(parsedLinks);
+        }
+      }
+    } catch (e) {
+      console.warn('LocalStorage load warning:', e);
+    }
+  }, []);
+
+  // 2. Fetch Links & Logs with smart merge
   const fetchData = async (isInitial = false) => {
     try {
       const [linksRes, logsRes] = await Promise.all([
@@ -100,25 +124,47 @@ export default function DashboardPage() {
       const linksData = await linksRes.json();
       const logsData = await logsRes.json();
 
-      if (linksData.success) setLinks(linksData.links || []);
-      if (logsData.success) {
-        const newLogs = logsData.logs || [];
-        
-        // Detect new incoming log for alert
-        if (!isInitial && newLogs.length > previousLogCountRef.current) {
-          playAlertChime();
-          const latest = newLogs[0];
-          showToast(`🎯 <strong>LOKASI TERDETEKSI!</strong><br>${latest?.address?.road || 'Jalan'} (${latest?.address?.city || ''})`, 'success');
-        }
-        previousLogCountRef.current = newLogs.length;
-        setLogs(newLogs);
+      if (linksData.success && Array.isArray(linksData.links)) {
+        setLinks((prev) => {
+          const map = new Map();
+          prev.forEach((l) => map.set(l.id, l));
+          linksData.links.forEach((l) => map.set(l.id, l));
+          const merged = Array.from(map.values());
+          try {
+            localStorage.setItem('tracklokasi_saved_links', JSON.stringify(merged));
+          } catch (e) {}
+          return merged;
+        });
+      }
+
+      if (logsData.success && Array.isArray(logsData.logs)) {
+        const incoming = logsData.logs;
+        setLogs((prev) => {
+          const map = new Map();
+          prev.forEach((l) => map.set(l.id, l));
+          incoming.forEach((l) => map.set(l.id, l));
+          const merged = Array.from(map.values()).sort(
+            (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+          );
+
+          if (!isInitial && merged.length > previousLogCountRef.current) {
+            playAlertChime();
+            const latest = merged[0];
+            showToast(`🎯 <strong>LOKASI TERDETEKSI!</strong><br>${latest?.address?.road || 'Jalan'} (${latest?.address?.city || ''})`, 'success');
+          }
+          previousLogCountRef.current = merged.length;
+          try {
+            localStorage.setItem('tracklokasi_saved_logs', JSON.stringify(merged));
+          } catch (e) {}
+          return merged;
+        });
       }
     } catch (err) {
       console.warn('Polling error:', err);
     }
   };
 
-  // Initial & Auto-poll every 3s
+  // Auto-poll every 3s
   useEffect(() => {
     fetchData(true);
     const interval = setInterval(() => {
@@ -141,6 +187,11 @@ export default function DashboardPage() {
         setModalOpen(false);
         const fullUrl = `${window.location.origin}/view/${data.link.id}`;
         copyToClipboard(fullUrl, 'Link Baru');
+        setLinks((prev) => {
+          const updated = [data.link, ...prev.filter(l => l.id !== data.link.id)];
+          try { localStorage.setItem('tracklokasi_saved_links', JSON.stringify(updated)); } catch(e) {}
+          return updated;
+        });
         fetchData();
       }
     } catch (err) {
@@ -153,6 +204,16 @@ export default function DashboardPage() {
     if (!confirm('Hapus link ini beserta seluruh riwayat lokasinya?')) return;
     try {
       await fetch(`/api/links/${id}`, { method: 'DELETE' });
+      setLinks((prev) => {
+        const filtered = prev.filter((l) => l.id !== id);
+        try { localStorage.setItem('tracklokasi_saved_links', JSON.stringify(filtered)); } catch(e) {}
+        return filtered;
+      });
+      setLogs((prev) => {
+        const filtered = prev.filter((l) => l.linkId !== id);
+        try { localStorage.setItem('tracklokasi_saved_logs', JSON.stringify(filtered)); } catch(e) {}
+        return filtered;
+      });
       showToast('Link berhasil dihapus', 'info');
       fetchData();
     } catch (e) {
@@ -164,6 +225,11 @@ export default function DashboardPage() {
     if (!confirm('Hapus log lokasi ini?')) return;
     try {
       await fetch(`/api/logs/${id}`, { method: 'DELETE' });
+      setLogs((prev) => {
+        const filtered = prev.filter((l) => l.id !== id);
+        try { localStorage.setItem('tracklokasi_saved_logs', JSON.stringify(filtered)); } catch(e) {}
+        return filtered;
+      });
       showToast('Log lokasi dihapus', 'info');
       fetchData();
     } catch (e) {
@@ -175,6 +241,8 @@ export default function DashboardPage() {
     if (!confirm('HAPUS SEMUA RIWAYAT LOKASI?')) return;
     try {
       await fetch('/api/logs', { method: 'DELETE' });
+      setLogs([]);
+      try { localStorage.removeItem('tracklokasi_saved_logs'); } catch(e) {}
       showToast('Semua riwayat lokasi telah dibersihkan', 'info');
       fetchData();
     } catch (e) {
