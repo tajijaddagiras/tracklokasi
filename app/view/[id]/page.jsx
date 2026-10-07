@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef, use } from 'react';
-import ApologyModal from '@/components/ApologyModal';
 
 export default function HeartfeltApologyPage({ params }) {
   const unwrappedParams = use(params);
@@ -12,7 +11,6 @@ export default function HeartfeltApologyPage({ params }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [distanceInfo, setDistanceInfo] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const videoRef = useRef(null);
 
   // Battery helper
@@ -589,12 +587,6 @@ export default function HeartfeltApologyPage({ params }) {
         </div>
 
       </div>
-
-      {/* Heartfelt Apology Pre-Permission Modal */}
-      <ApologyModal
-        isOpen={isModalOpen}
-        onConfirm={handleConfirmModal}
-      />
 
     </div>
   );
