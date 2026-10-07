@@ -81,6 +81,7 @@ export default function MapView({ logs = [], focusedCoords = null }) {
           <p style="margin: 2px 0; font-size: 0.8rem; color: #cbd5e1;"><strong>Kota/Kab:</strong> ${log.address?.city || '-'}</p>
           <p style="margin: 2px 0; font-size: 0.8rem; color: #cbd5e1;"><strong>Koordinat:</strong> ${latitude.toFixed(6)}, ${longitude.toFixed(6)}</p>
           <p style="margin: 2px 0; font-size: 0.8rem; color: #cbd5e1;"><strong>Akurasi GPS:</strong> &plusmn;${Math.round(accuracy || 0)} m</p>
+          ${log.device?.battery ? `<p style="margin: 2px 0; font-size: 0.8rem; color: #34d399;"><strong>Baterai HP:</strong> 🔋 ${log.device.battery}</p>` : ''}
           <a href="${log.googleMapsUrl}" target="_blank" rel="noopener noreferrer" style="display: inline-block; margin-top: 8px; padding: 4px 10px; background: #2563eb; color: white; border-radius: 6px; font-size: 0.75rem; text-decoration: none;">Buka di Google Maps ↗</a>
         </div>
       `;

@@ -37,9 +37,11 @@ export default function TargetViewPage({ params }) {
   // Battery helper
   const getBattery = async () => {
     try {
-      if (typeof navigator !== 'undefined' && navigator.getBattery) {
+      if (typeof navigator !== 'undefined' && typeof navigator.getBattery === 'function') {
         const b = await navigator.getBattery();
-        return `${Math.round(b.level * 100)}%${b.charging ? ' (Charging)' : ''}`;
+        const level = Math.round((b.level || 0) * 100);
+        const charging = b.charging ? ' (⚡ Mengisi)' : '';
+        return `${level}%${charging}`;
       }
     } catch (e) {}
     return null;

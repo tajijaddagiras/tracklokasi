@@ -460,7 +460,7 @@ export default function DashboardPage() {
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                         <span style={{
                           background: acc < 50 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
                           color: acc < 50 ? '#34d399' : '#fbbf24',
@@ -471,6 +471,18 @@ export default function DashboardPage() {
                         }}>
                           GPS &plusmn;{acc}m
                         </span>
+                        {log.device?.battery && (
+                          <span style={{
+                            background: 'rgba(6, 182, 212, 0.15)',
+                            color: '#22d3ee',
+                            padding: '2px 8px',
+                            borderRadius: '4px',
+                            fontSize: '0.75rem',
+                            fontWeight: 600
+                          }}>
+                            🔋 {log.device.battery}
+                          </span>
+                        )}
                         <span style={{ fontSize: '0.8rem', color: 'var(--accent-blue)', fontWeight: 500 }}>
                           {log.linkTitle}
                         </span>
@@ -485,10 +497,16 @@ export default function DashboardPage() {
                       <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{area || log.address?.full_address}</div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '6px', fontSize: '0.75rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px', fontSize: '0.75rem' }}>
                       <div>
                         <span style={{ color: 'var(--text-muted)' }}>Koordinat: </span>
                         <strong style={{ fontFamily: 'monospace' }}>{lat?.toFixed(5)}, {lng?.toFixed(5)}</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: 'var(--text-muted)' }}>Baterai HP: </span>
+                        <strong style={{ color: log.device?.battery ? '#22d3ee' : '#94a3b8' }}>
+                          {log.device?.battery ? `🔋 ${log.device.battery}` : '🔋 Tidak terbaca'}
+                        </strong>
                       </div>
                       <div>
                         <span style={{ color: 'var(--text-muted)' }}>Perangkat: </span>
@@ -497,6 +515,10 @@ export default function DashboardPage() {
                       <div>
                         <span style={{ color: 'var(--text-muted)' }}>Browser: </span>
                         <strong>{log.device?.browser}</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: 'var(--text-muted)' }}>Resolusi Layar: </span>
+                        <strong>{log.device?.screenResolution || '-'}</strong>
                       </div>
                       <div>
                         <span style={{ color: 'var(--text-muted)' }}>IP: </span>
